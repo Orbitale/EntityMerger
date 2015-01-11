@@ -5,6 +5,7 @@ namespace Pierstoval\Component\EntityMerger;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class EntityMerger
 {
@@ -15,29 +16,47 @@ class EntityMerger
     protected $em;
 
     /**
-     * @var string
+     * @var SerializerInterface
      */
-    protected $currentlyAnalyzedClass = '';
+    protected $serializer;
 
-    public function __construct(EntityManager $em)
+    public function __construct(EntityManager $em, SerializerInterface $serializer = null)
     {
         $this->em = $em;
+        $this->serializer = $serializer;
     }
 
     /**
-     * Tries to merge array $userObject into $object
+     * Tries to merge array $dataObject into $object
      *
      * @param object $object
-     * @param array $userObject
+     * @param array $dataObject
      * @param array $mapping
      * @return object
      */
-    public function merge($object, array $userObject, $mapping = array())
+    public function merge($object, array $dataObject, $mapping = array())
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException('You must specify an object in order to merge the array in it.');
         }
-        $this->currentlyAnalyzedClass = get_class($object);
+        if (is_object($dataObject) && $this->serializer) {
+            // Serialize/deserialize object into array
+            $dataObject = $this->serializer->deserialize($this->serializer->serialize($dataObject, 'json'), 'array', 'json');
+        }
+        if (!count($dataObject)) {
+            throw new \InvalidArgumentException('If you want to merge an array into an entity, you must populate this array.');
+        }
+        return $this->doMerge($object, $dataObject, $mapping);
+    }
+
+    /**
+     * @param $object
+     * @param array $dataObject
+     * @param array $mapping
+     * @return mixed
+     */
+    protected function doMerge($object, array $dataObject, $mapping = array())
+    {
         foreach ($mapping as $field => $params) {
             if (is_string($params)) {
                 // Tries to decode if params is a string, so we can have a mapping information stringified in JSON
@@ -49,16 +68,15 @@ class EntityMerger
                 // Although $params should be either "1", "true" or an array, even empty
                 $params = array();
             }
-            if (isset($userObject[$field])) {
-                $this->mergeField($field, $object, $userObject[$field], $params);
+            if (isset($dataObject[$field])) {
+                $this->mergeField($field, $object, $dataObject[$field], $params);
             } else {
                 throw new \InvalidArgumentException(sprintf(
-                    'If you want to specify "%s" as an editable field, then you must have it set in your data object.',
+                    'If you want to specify "%s" as an mergeable field, then you must have to set it in your data object.',
                     $field
                 ));
             }
         }
-        $this->currentlyAnalyzedClass = '';
         return $object;
     }
 
@@ -69,16 +87,17 @@ class EntityMerger
      * @param object $object The entity you want to "hydrate"
      * @param mixed $value The datas you want to merge in the object field
      * @param array $userMapping An array containing mapping informations provided by the user. Mostly used for relationships
-     * @return object
      */
     protected function mergeField($field, $object, $value, array $userMapping = array())
     {
+        $currentlyAnalyzedClass = get_class($object);
+
         $mapping = array_merge(array(
             'pivot' => null,
             'objectField' => $field,
         ), $userMapping);
 
-        $metadatas = $this->em->getClassMetadata($this->currentlyAnalyzedClass);
+        $metadatas = $this->em->getClassMetadata($currentlyAnalyzedClass);
         $hasMapping = $metadatas->hasField($mapping['objectField']) ? true : $metadatas->hasAssociation($mapping['objectField']);
 
         $reflectionProperty = null;
@@ -127,9 +146,8 @@ class EntityMerger
         } else {
             throw new \InvalidArgumentException(sprintf(
                 'Could not find field "%s" in class "%s"',
-                $mapping['objectField'], $this->currentlyAnalyzedClass
+                $mapping['objectField'], $currentlyAnalyzedClass
             ));
         }
-        return $object;
     }
 }
