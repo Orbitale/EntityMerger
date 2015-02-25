@@ -3,9 +3,9 @@
 namespace Pierstoval\Component\EntityMerger;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface as JMSSerializerInterface;
 
 class EntityMerger
 {
@@ -13,16 +13,20 @@ class EntityMerger
     /**
      * @var ObjectManager
      */
-    protected $em;
+    protected $om;
 
     /**
      * @var SerializerInterface
      */
     protected $serializer;
 
-    public function __construct(EntityManager $em, SerializerInterface $serializer = null)
+    public function __construct(ObjectManager $om, $serializer = null)
     {
-        $this->em = $em;
+        $this->om = $om;
+
+        if ($serializer && !($serializer instanceof SerializerInterface || $serializer instanceof JMSSerializerInterface)) {
+            throw new \InvalidArgumentException('Serializer must be an instance of SerializerInterface, either Symfony native or JMS oneS.');
+        }
         $this->serializer = $serializer;
     }
 
@@ -97,7 +101,7 @@ class EntityMerger
             'objectField' => $field,
         ), $userMapping);
 
-        $metadatas = $this->em->getClassMetadata($currentlyAnalyzedClass);
+        $metadatas = $this->om->getClassMetadata($currentlyAnalyzedClass);
         $hasMapping = $metadatas->hasField($mapping['objectField']) ? true : $metadatas->hasAssociation($mapping['objectField']);
 
         $reflectionProperty = null;
@@ -118,14 +122,14 @@ class EntityMerger
                 if (null === $pivotValue) {
                     // If no pivot value is specified, we'll get automatically the Entity's Primary Key
                     /** @var ClassMetadataInfo $relationMetadatas */
-                    $relationMetadatas = $this->em->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
+                    $relationMetadatas = $this->om->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
                     $pivotValue = $relationMetadatas->getSingleIdentifierFieldName();
                 }
 
                 if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
                     // Single valued : ManyToOne or OneToOne
                     if ($value) {
-                        $newRelationObject = $this->em->getRepository($relationClass)->findOneBy(array($pivotValue => $value[$pivotValue]));
+                        $newRelationObject = $this->om->getRepository($relationClass)->findOneBy(array($pivotValue => $value[$pivotValue]));
                     } else {
                         $newRelationObject = null;
                     }
@@ -136,7 +140,7 @@ class EntityMerger
                         if (!is_array($value)) {
                             $value = array($value);
                         }
-                        $newCollection = $this->em->getRepository($relationClass)->findBy(array($pivotValue => $value));
+                        $newCollection = $this->om->getRepository($relationClass)->findBy(array($pivotValue => $value));
                     } else {
                         $newCollection = array();
                     }

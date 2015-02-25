@@ -24,7 +24,7 @@
   "minimum-stability": "stable",
   "autoload": {
     "psr-4": {
-      "Pierstoval\\Component\\": ""
+      "Pierstoval\\Component\\EntityMerger\\": ""
     }
   }
 }
