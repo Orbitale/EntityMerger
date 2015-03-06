@@ -1,2 +1,7 @@
 composer.phar
+composer.lock
 vendor/
+
+.gitignore
+build/
+
