@@ -9,7 +9,7 @@
          processIsolation="false"
          stopOnFailure="false"
          syntaxCheck="false"
-         bootstrap="Tests/bootstrap.php"
+         bootstrap="./Tests/bootstrap.php"
         >
 
     <testsuites>
@@ -19,9 +19,8 @@
     </testsuites>
 
     <filter>
-        <whitelist processUncoveredFilesFromWhitelist="true">
-            <file>./EntityMerger.php</file>
-            <file>./EmptyClassMetadata.php</file>
+        <whitelist>
+            <directory suffix=".php">./</directory>
             <exclude>
                 <directory>./build</directory>
                 <directory>./Tests</directory>
