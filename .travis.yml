@@ -19,4 +19,3 @@ after_script:
 
 notifications:
     email: pierstoval@gmail.com
- 
