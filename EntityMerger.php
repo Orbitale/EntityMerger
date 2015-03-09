@@ -120,7 +120,8 @@ class EntityMerger
         } else {
             $metadatas = new EmptyClassMetadata($currentlyAnalyzedClass);
         }
-        $hasMapping = $metadatas->hasField($mapping['objectField']) ? true : $metadatas->hasAssociation($mapping['objectField']);
+
+        $hasMapping = $metadatas->hasField($mapping['objectField']) ?: $metadatas->hasAssociation($mapping['objectField']);
 
         $reflectionProperty = null;
 
