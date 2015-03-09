@@ -8,11 +8,11 @@
 * file that was distributed with this source code.
 */
 
-namespace Pierstoval\Component\EntityMerger\Tests;
+namespace Pierstoval\Component\EntityMerger\Tests\Fixtures\DownedNs;
 
-/**
- *
- */
-class TestEntity {
+class DownedNsEntity
+{
+
+    public $id = 1;
 
 }

@@ -20,3 +20,5 @@ AnnotationRegistry::registerLoader(function($class) use ($autoload) {
     $autoload->loadClass($class);
     return class_exists($class, false);
 });
+
+spl_autoload_register(array($autoload, 'loadClass'));

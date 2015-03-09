@@ -10,7 +10,8 @@
 
 namespace Pierstoval\Component\EntityMerger\Tests;
 
-class EntityMergerTest extends \PHPUnit_Framework_TestCase {
+class EntityMergerTest extends \PHPUnit_Framework_TestCase
+{
 
     public function __construct()
     {
