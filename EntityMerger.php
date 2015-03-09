@@ -28,7 +28,7 @@ class EntityMerger
      */
     protected $serializer;
 
-    public function __construct(ObjectManager $om, $serializer = null)
+    public function __construct(ObjectManager $om = null, $serializer = null)
     {
         $this->om = $om;
 
@@ -69,24 +69,30 @@ class EntityMerger
      */
     protected function doMerge($object, array $dataObject, $mapping = array())
     {
-        foreach ($mapping as $field => $params) {
-            if (is_string($params)) {
-                // Tries to decode if params is a string, so we can have a mapping information stringified in JSON
-                $params = json_decode($params, true);
+        if (count($mapping)) {
+            foreach ($mapping as $field => $params) {
+                if (is_string($params)) {
+                    // Tries to decode if params is a string, so we can have a mapping information stringified in JSON
+                    $params = json_decode($params, true);
+                }
+                if (!is_array($params)) {
+                    // Allows anything to be transformed into an array
+                    // If we used json_decode, "null" will be returned and then it'll become an empty array
+                    // Although $params should be either "1", "true" or an array, even empty
+                    $params = array();
+                }
+                if (isset($dataObject[$field])) {
+                    $this->mergeField($field, $object, $dataObject[$field], $params);
+                } else {
+                    throw new \InvalidArgumentException(sprintf(
+                        'If you want to specify "%s" as an mergeable field, then you must have to set it in your data object.',
+                        $field
+                    ));
+                }
             }
-            if (!is_array($params)) {
-                // Allows anything to be transformed into an array
-                // If we used json_decode, "null" will be returned and then it'll become an empty array
-                // Although $params should be either "1", "true" or an array, even empty
-                $params = array();
-            }
-            if (isset($dataObject[$field])) {
-                $this->mergeField($field, $object, $dataObject[$field], $params);
-            } else {
-                throw new \InvalidArgumentException(sprintf(
-                    'If you want to specify "%s" as an mergeable field, then you must have to set it in your data object.',
-                    $field
-                ));
+        } else {
+            foreach ($dataObject as $field => $value) {
+                $this->mergeField($field, $object, $value, array());
             }
         }
         return $object;
@@ -109,7 +115,11 @@ class EntityMerger
             'objectField' => $field,
         ), $userMapping);
 
-        $metadatas = $this->om->getClassMetadata($currentlyAnalyzedClass);
+        if ($this->om) {
+            $metadatas = $this->om->getClassMetadata($currentlyAnalyzedClass);
+        } else {
+            $metadatas = new EmptyClassMetadata($currentlyAnalyzedClass);
+        }
         $hasMapping = $metadatas->hasField($mapping['objectField']) ? true : $metadatas->hasAssociation($mapping['objectField']);
 
         $reflectionProperty = null;
