@@ -30,4 +30,44 @@ class TestEntity
      */
     protected $string;
 
+    /**
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param mixed $id
+     *
+     * @return TestEntity
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getString()
+    {
+        return $this->string;
+    }
+
+    /**
+     * @param mixed $string
+     *
+     * @return TestEntity
+     */
+    public function setString($string)
+    {
+        $this->string = $string;
+
+        return $this;
+    }
+
 }

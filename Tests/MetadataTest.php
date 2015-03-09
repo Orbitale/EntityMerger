@@ -25,10 +25,10 @@ class MetadataTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('ReflectionClass', $metadata->getReflectionClass());
 
         $this->assertTrue($metadata->hasField('id'));
+        $this->assertTrue($metadata->hasField('privateField'));
+        $this->assertTrue($metadata->hasField('protectedField'));
 
         $this->assertFalse($metadata->hasField('this_field_should_not_exist'));
-        $this->assertFalse($metadata->hasField('privateField'));
-        $this->assertFalse($metadata->hasField('protectedField'));
 
         $this->assertEquals(array(
             'id',
@@ -41,6 +41,8 @@ class MetadataTest extends \PHPUnit_Framework_TestCase
             'externalClass',
             'date',
             'notMapped',
+            'protectedField',
+            'privateField',
         ), $metadata->getFieldNames());
 
         $this->assertNull($metadata->isIdentifier('id'));

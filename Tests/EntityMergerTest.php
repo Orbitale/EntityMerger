@@ -10,16 +10,47 @@
 
 namespace Pierstoval\Component\EntityMerger\Tests;
 
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\PDOSqlite\Driver;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Configuration;
+use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Pierstoval\Component\EntityMerger\EntityMerger;
+use Pierstoval\Component\EntityMerger\Tests\Fixtures\TestEntity;
+
 class EntityMergerTest extends \PHPUnit_Framework_TestCase
 {
 
-    public function __construct()
+    protected function getEmMock()
     {
+        $config = new Configuration();
+        $config->setProxyDir(__DIR__.'/../../build/proxies/');
+        $config->setProxyNamespace(__NAMESPACE__.'\\__PROXY__');
+        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader()));
+
+        $conn = new Connection(array('pdo' => true), new Driver());
+        $em = EntityManager::create($conn, $config);
+
+        return $em;
     }
 
     public function testMerge()
     {
-        $this->assertTrue(true);
+        $em = $this->getEmMock();
+
+        $merger = new EntityMerger($em);
+
+        /** @var TestEntity $entity */
+        $entity = new TestEntity;
+
+        $entity->setId(1)->setString('Name');
+        $this->assertEquals(1, $entity->getId());
+
+        /** @var TestEntity $merged */
+        $mergedEntity = $merger->merge($entity, array('id' => 10));
+
+        $this->assertEquals(10, $mergedEntity->getId());
     }
 
 }
