@@ -48,10 +48,7 @@ class EmptyClassMetadata  implements ClassMetadata
 
     public function hasField($fieldName)
     {
-        if ($this->getReflectionClass()->hasProperty($fieldName)) {
-            return $this->getReflectionClass()->getProperty($fieldName)->isPublic();
-        }
-        return false;
+        return $this->getReflectionClass()->hasProperty($fieldName);
     }
 
     public function getFieldNames()
@@ -68,7 +65,7 @@ class EmptyClassMetadata  implements ClassMetadata
 
     public function getTypeOfField($fieldName)
     {
-        if ($this->hasField($fieldName)) {
+        if ($this->getReflectionClass()->hasProperty($fieldName)) {
             $reflProp = $this->getReflectionClass()->getProperty($fieldName);
             $doc = (string) $reflProp->getDocComment();
             if (strpos($doc, '@var') === false) {
