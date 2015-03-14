@@ -33,7 +33,7 @@ class EntityMerger
         $this->om = $om;
 
         if ($serializer && !($serializer instanceof SerializerInterface || $serializer instanceof JMSSerializerInterface)) {
-            throw new \InvalidArgumentException('Serializer must be an instance of SerializerInterface, either Symfony native or JMS oneS.');
+            throw new \InvalidArgumentException('Serializer must be an instance of SerializerInterface, either Symfony native or JMS one.');
         }
         $this->serializer = $serializer;
     }
