@@ -13,7 +13,7 @@
         >
 
     <testsuites>
-        <testsuite name="PierstovalEntityMerger test suite">
+        <testsuite name="OrbitaleEntityMerger test suite">
             <directory suffix="Test.php">Tests</directory>
         </testsuite>
     </testsuites>

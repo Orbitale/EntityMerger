@@ -1,14 +1,14 @@
 <?php
 /*
-* This file is part of the Pierstoval's EntityMerger package.
+* This file is part of the Orbitale EntityMerger package.
 *
-* (c) Alexandre "Pierstoval" Rock Ancelet <pierstoval@gmail.com>
+* (c) Alexandre Rock Ancelet <contact@orbitale.io>
 *
 * For the full copyright and license information, please view the LICENSE
 * file that was distributed with this source code.
 */
 
-namespace Pierstoval\Component\EntityMerger\Tests;
+namespace Orbitale\Component\EntityMerger\Tests;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Connection;
@@ -16,8 +16,8 @@ use Doctrine\DBAL\Driver\PDOSqlite\Driver;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Pierstoval\Component\EntityMerger\EntityMerger;
-use Pierstoval\Component\EntityMerger\Tests\Fixtures\TestEntity;
+use Orbitale\Component\EntityMerger\EntityMerger;
+use Orbitale\Component\EntityMerger\Tests\Fixtures\TestEntity;
 
 class EntityMergerTest extends \PHPUnit_Framework_TestCase
 {

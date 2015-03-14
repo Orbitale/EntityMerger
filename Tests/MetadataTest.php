@@ -1,16 +1,16 @@
 <?php
 /*
-* This file is part of the Pierstoval's EntityMerger package.
+* This file is part of the Orbitale EntityMerger package.
 *
-* (c) Alexandre "Pierstoval" Rock Ancelet <pierstoval@gmail.com>
+* (c) Alexandre Rock Ancelet <contact@orbitale.io>
 *
 * For the full copyright and license information, please view the LICENSE
 * file that was distributed with this source code.
 */
 
-namespace Pierstoval\Component\EntityMerger\Tests;
+namespace Orbitale\Component\EntityMerger\Tests;
 
-use Pierstoval\Component\EntityMerger\EmptyClassMetadata;
+use Orbitale\Component\EntityMerger\EmptyClassMetadata;
 
 class MetadataTest extends \PHPUnit_Framework_TestCase
 {
@@ -18,9 +18,9 @@ class MetadataTest extends \PHPUnit_Framework_TestCase
     public function testEmptyMetadata()
     {
 
-        $metadata = new EmptyClassMetadata('Pierstoval\Component\EntityMerger\Tests\Fixtures\TestClassicObject');
+        $metadata = new EmptyClassMetadata('Orbitale\Component\EntityMerger\Tests\Fixtures\TestClassicObject');
 
-        $this->assertInstanceOf('Pierstoval\Component\EntityMerger\EmptyClassMetadata', $metadata);
+        $this->assertInstanceOf('Orbitale\Component\EntityMerger\EmptyClassMetadata', $metadata);
 
         $this->assertInstanceOf('ReflectionClass', $metadata->getReflectionClass());
 
@@ -63,9 +63,9 @@ class MetadataTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('array', $metadata->getTypeOfField('defaultedField'));
         $this->assertEquals('integer', $metadata->getTypeOfField('bothCommentedAndDefaulted'));
         $this->assertEquals('object', $metadata->getTypeOfField('object'));
-        $this->assertEquals('\Pierstoval\Component\EntityMerger\Tests\Fixtures\TestClassicObject', $metadata->getTypeOfField('classField'));
-        $this->assertEquals('Pierstoval\Component\EntityMerger\Tests\Fixtures\TestClassicObject', $metadata->getTypeOfField('classCollection'));
-        $this->assertEquals('Pierstoval\Component\EntityMerger\Tests\Fixtures\DownedNs\DownedNsEntity', $metadata->getTypeOfField('externalClass'));
+        $this->assertEquals('\Orbitale\Component\EntityMerger\Tests\Fixtures\TestClassicObject', $metadata->getTypeOfField('classField'));
+        $this->assertEquals('Orbitale\Component\EntityMerger\Tests\Fixtures\TestClassicObject', $metadata->getTypeOfField('classCollection'));
+        $this->assertEquals('Orbitale\Component\EntityMerger\Tests\Fixtures\DownedNs\DownedNsEntity', $metadata->getTypeOfField('externalClass'));
         $this->assertEquals('\DateTime', $metadata->getTypeOfField('date'));
         $this->assertEquals(null, $metadata->getTypeOfField('notMapped'));
 

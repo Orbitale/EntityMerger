@@ -1,16 +1,16 @@
 <?php
 /*
-* This file is part of the Pierstoval's EntityMerger package.
+* This file is part of the Orbitale EntityMerger package.
 *
-* (c) Alexandre "Pierstoval" Rock Ancelet <pierstoval@gmail.com>
+* (c) Alexandre Rock Ancelet <contact@orbitale.io>
 *
 * For the full copyright and license information, please view the LICENSE
 * file that was distributed with this source code.
 */
 
-namespace Pierstoval\Component\EntityMerger\Tests\Fixtures;
+namespace Orbitale\Component\EntityMerger\Tests\Fixtures;
 
-use Pierstoval\Component\EntityMerger\Tests\Fixtures\DownedNs\DownedNsEntity;
+use Orbitale\Component\EntityMerger\Tests\Fixtures\DownedNs\DownedNsEntity;
 use Symfony\Component\Validator\Constraints\DateTime;
 
 class TestClassicObject
@@ -37,7 +37,7 @@ class TestClassicObject
     public $object;
 
     /**
-     * @var \Pierstoval\Component\EntityMerger\Tests\Fixtures\TestClassicObject
+     * @var \Orbitale\Component\EntityMerger\Tests\Fixtures\TestClassicObject
      */
     public $classField;
 
