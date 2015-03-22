@@ -41,18 +41,19 @@ class EntityMerger
     /**
      * Tries to merge array $dataObject into $object
      *
-     * @param object $object
-     * @param array $dataObject
-     * @param array $mapping
+     * @param object       $object
+     * @param array|object $dataObject
+     * @param array        $mapping
      * @return object
      */
-    public function merge($object, array $dataObject, $mapping = array())
+    public function merge($object, $dataObject, $mapping = array())
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException('You must specify an object in order to merge the array in it.');
         }
         if (is_object($dataObject) && $this->serializer) {
             // Serialize/deserialize object into array
+            // This allows to merge two objects together
             $dataObject = $this->serializer->deserialize($this->serializer->serialize($dataObject, 'json'), 'array', 'json');
         }
         if (!count($dataObject)) {
