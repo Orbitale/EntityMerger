@@ -33,46 +33,6 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
-     * @return EntityManager
-     * @throws ORMException
-     */
-    protected function getEntityManager()
-    {
-        $config = new Configuration();
-        $config->setProxyDir(__DIR__.'/../build/proxies/');
-        $config->setProxyNamespace(__NAMESPACE__.'\\__PROXY__');
-        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader()));
-
-        $conn = new Connection(array('pdo' => true), new Driver());
-        $em = EntityManager::create($conn, $config);
-
-        return $em;
-    }
-
-    /**
-     * @return Serializer
-     */
-    protected function getSerializer()
-    {
-        $normalizers = array(new GetSetMethodNormalizer(), new CustomNormalizer());
-        if (class_exists('Symfony\Component\Serializer\Normalizer\PropertyNormalizer')) {
-            $normalizers[] = new PropertyNormalizer();
-        }
-        $encoders = array(new JsonEncoder());
-        return new Serializer($normalizers, $encoders);
-    }
-
-    /**
-     * @return JmsSerializer
-     */
-    protected function getJmsSerializer()
-    {
-        $builder = SerializerBuilder::create();
-        $builder->setPropertyNamingStrategy(new IdenticalPropertyNamingStrategy());
-        return $builder->build();
-    }
-
-    /**
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Serializer must be an instance of SerializerInterface, either Symfony native or JMS one.
      */
@@ -152,4 +112,43 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($serializedObject->commentedField, $newItem->commentedField);
     }
 
+    /**
+     * @return EntityManager
+     * @throws ORMException
+     */
+    protected function getEntityManager()
+    {
+        $config = new Configuration();
+        $config->setProxyDir(__DIR__.'/../build/proxies/');
+        $config->setProxyNamespace(__NAMESPACE__.'\\__PROXY__');
+        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader()));
+
+        $conn = new Connection(array('pdo' => true), new Driver());
+        $em = EntityManager::create($conn, $config);
+
+        return $em;
+    }
+
+    /**
+     * @return Serializer
+     */
+    protected function getSerializer()
+    {
+        $normalizers = array(new GetSetMethodNormalizer(), new CustomNormalizer());
+        if (class_exists('Symfony\Component\Serializer\Normalizer\PropertyNormalizer')) {
+            $normalizers[] = new PropertyNormalizer();
+        }
+        $encoders = array(new JsonEncoder());
+        return new Serializer($normalizers, $encoders);
+    }
+
+    /**
+     * @return JmsSerializer
+     */
+    protected function getJmsSerializer()
+    {
+        $builder = SerializerBuilder::create();
+        $builder->setPropertyNamingStrategy(new IdenticalPropertyNamingStrategy());
+        return $builder->build();
+    }
 }
