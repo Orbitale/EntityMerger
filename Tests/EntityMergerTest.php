@@ -24,6 +24,7 @@ use Orbitale\Component\EntityMerger\EntityMerger;
 use Orbitale\Component\EntityMerger\Tests\Fixtures\TestClassicObject;
 use Orbitale\Component\EntityMerger\Tests\Fixtures\TestEntity;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -53,7 +54,12 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
      */
     protected function getSerializer()
     {
-        return new Serializer(array(new GetSetMethodNormalizer(), new PropertyNormalizer()), array(new JsonEncoder()));
+        $normalizers = array(new GetSetMethodNormalizer(), new CustomNormalizer());
+        if (class_exists('Symfony\Component\Serializer\Normalizer\PropertyNormalizer')) {
+            $normalizers[] = new PropertyNormalizer();
+        }
+        $encoders = array(new JsonEncoder());
+        return new Serializer($normalizers, $encoders);
     }
 
     /**
@@ -115,6 +121,9 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 
     public function testMergeSerializeNative()
     {
+        if (!class_exists('Symfony\Component\Serializer\Normalizer\PropertyNormalizer')) {
+            $this->markTestSkipped('Symfony 2.3 and 2.4 cannot use the serializer with the EntityMerger.');
+        }
         $serializer = $this->getSerializer();
 
         $merger = new EntityMerger(null, $serializer);
