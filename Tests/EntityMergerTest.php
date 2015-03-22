@@ -10,6 +10,7 @@
 
 namespace Orbitale\Component\EntityMerger\Tests;
 
+use stdClass;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\PDOSqlite\Driver;
@@ -61,7 +62,7 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
         $merger->merge((object) array(), array());
     }
 
-    public function testMerge()
+    public function testMergeEntity()
     {
         $em = $this->getEntityManager();
 
@@ -77,6 +78,26 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
         $mergedEntity = $merger->merge($entity, array('id' => 10));
 
         $this->assertEquals(10, $mergedEntity->getId());
+    }
+
+    public function testMergeClassicObject()
+    {
+        $merger = new EntityMerger();
+        /** @var TestClassicObject $object */
+        $object = $merger->merge(new TestClassicObject(), array('commentedField' => 'this is awesome !'));
+        $this->assertEquals('this is awesome !', $object->commentedField);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Could not find field "field" in class "stdClass"
+     */
+    public function testUnmappedField()
+    {
+        $object = new stdClass();
+        $object->field = null;
+        $merger = new EntityMerger();
+        $merger->merge($object, array('field' => 'value'));
     }
 
     public function testMergeSerializeNative()
