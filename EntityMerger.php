@@ -54,7 +54,7 @@ class EntityMerger
         if (is_object($dataObject) && $this->serializer) {
             // Serialize/deserialize object into array
             // This allows to merge two objects together
-            $dataObject = $this->serializer->deserialize($this->serializer->serialize($dataObject, 'json'), 'array', 'json');
+            $dataObject = json_decode($this->serializer->serialize($dataObject, 'json'), true);
         }
         if (!count($dataObject)) {
             throw new \InvalidArgumentException('If you want to merge an array into an entity, you must populate this array.');
