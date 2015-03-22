@@ -12,7 +12,5 @@ namespace Orbitale\Component\EntityMerger\Tests\Fixtures\DownedNs;
 
 class DownedNsEntity
 {
-
     public $id = 1;
-
 }
