@@ -71,4 +71,11 @@ class MetadataTest extends \PHPUnit_Framework_TestCase
 
     }
 
+    public function testEntityMetadataForProperty()
+    {
+        $metadata = new EmptyClassMetadata('Orbitale\Component\EntityMerger\Tests\Fixtures\Entity\TestEntity');
+
+        $this->assertNull($metadata->getTypeOfField('string'));
+    }
+
 }

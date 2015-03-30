@@ -10,20 +10,21 @@
 
 namespace Orbitale\Component\EntityMerger\Tests;
 
-use stdClass;
 use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\PDOSqlite\Driver;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Configuration;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Doctrine\ORM\Tools\SchemaTool;
+use stdClass;
+use Doctrine\ORM\Tools\SchemaValidator;
+use Doctrine\ORM\Tools\Setup;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMException;
 use JMS\Serializer\Naming\IdenticalPropertyNamingStrategy;
 use JMS\Serializer\Serializer as JmsSerializer;
 use JMS\Serializer\SerializerBuilder;
 use Orbitale\Component\EntityMerger\EntityMerger;
 use Orbitale\Component\EntityMerger\Tests\Fixtures\TestClassicObject;
-use Orbitale\Component\EntityMerger\Tests\Fixtures\TestEntity;
+use Orbitale\Component\EntityMerger\Tests\Fixtures\Entity\TestEntity;
+use Orbitale\Component\EntityMerger\Tests\Fixtures\Entity\TestEntityWithAssociation;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
@@ -133,19 +134,103 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($serializedObject->commentedField, $newItem->commentedField);
     }
 
+    public function testMergeWithMapping()
+    {
+        $object = new TestClassicObject();
+        $object->commentedField = 'Should never be analyzed.';
+        $data = array('commentedField' => 'This field should be specified.');
+        $mapping = array('commentedField' => true,);
+
+        $merger = new EntityMerger();
+
+        $merger->merge($object, $data, $mapping);
+
+        $this->assertEquals($data['commentedField'], $object->commentedField);
+    }
+
+    public function testMergeWithMappingJson()
+    {
+        $object = new TestClassicObject();
+        $object->commentedField = 'Should never be analyzed.';
+        $data = array('commented_field' => 'This field should be specified.');
+        $mapping = array('commented_field' => json_encode(array('objectField' => 'commentedField')));
+
+        $merger = new EntityMerger();
+
+        $merger->merge($object, $data, $mapping);
+
+        $this->assertEquals($data['commented_field'], $object->commentedField);
+    }
+
+    public function testMergeWithMappingObjectField()
+    {
+        $object = new TestClassicObject();
+        $object->commentedField = 'Should never be analyzed.';
+        $data = array('commented_field' => 'This field should be specified.');
+        $mapping = array('commented_field' => array('objectField' => 'commentedField'));
+
+        $merger = new EntityMerger();
+
+        $merger->merge($object, $data, $mapping);
+
+        $this->assertEquals($data['commented_field'], $object->commentedField);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage If you want to specify "inexistant_field" as an mergeable field, then you must have to set it in your data object.
+     */
+    public function testMergeWithMappingInvalid()
+    {
+        $object = new TestClassicObject();
+        $object->commentedField = 'Should never be analyzed.';
+        $data = array('commentedField' => 'This field should be specified.');
+        $mapping = array('commentedField' => true, 'inexistant_field' => true);
+
+        $merger = new EntityMerger();
+
+        $merger->merge($object, $data, $mapping);
+    }
+
+    public function testMergeWithMappingAssociation()
+    {
+        $object = new TestEntityWithAssociation();
+
+        $em = $this->getEntityManager();
+
+        $testEntityInDatabase = new TestEntity();
+        $testEntityInDatabase->setString('This should be found for test.');
+        $em->persist($testEntityInDatabase);
+        $em->flush();
+
+        $merger = new EntityMerger($em);
+
+        $data = array('manyToOne' => array('id' => 1, 'string' => 'New string.'));
+        $mapping = array('manyToOne' => true);
+
+        $merger->merge($object, $data, $mapping);
+
+        $this->assertEquals($data['manyToOne']['id'], $object->getManyToOne()->getId());
+        $this->assertEquals($data['manyToOne']['string'], $object->getManyToOne()->getString());
+    }
+
     /**
      * @return EntityManager
      * @throws ORMException
      */
     protected function getEntityManager()
     {
-        $config = new Configuration();
-        $config->setProxyDir(__DIR__.'/../build/proxies/');
-        $config->setProxyNamespace(__NAMESPACE__.'\\__PROXY__');
-        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader()));
+        $config = Setup::createAnnotationMetadataConfiguration(array(__DIR__."/Fixtures/Entity"), true);
+        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader(), array(__DIR__."/Fixtures/Entity")));
 
-        $conn = new Connection(array('pdo' => true), new Driver());
-        $em = EntityManager::create($conn, $config);
+        if (file_exists(__DIR__.'/../build/test.db')) {
+            unlink(__DIR__.'/../build/test.db');
+        }
+
+        $em = EntityManager::create(array('path' => __DIR__.'/../build/test.db', 'driver' => 'pdo_sqlite'), $config);
+
+        $tool = new SchemaTool($em);
+        $tool->createSchema($em->getMetadataFactory()->getAllMetadata());
 
         return $em;
     }

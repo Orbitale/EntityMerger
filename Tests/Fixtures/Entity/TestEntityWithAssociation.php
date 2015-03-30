@@ -8,15 +8,15 @@
 * file that was distributed with this source code.
 */
 
-namespace Orbitale\Component\EntityMerger\Tests\Fixtures;
+namespace Orbitale\Component\EntityMerger\Tests\Fixtures\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity()
+ * @ORM\Table(name="test_entity_asso")
  */
-class TestEntity
-{
+class TestEntityWithAssociation {
 
     /**
      * @ORM\Id
@@ -26,9 +26,10 @@ class TestEntity
     protected $id;
 
     /**
-     * @ORM\Column(name="name", type="string", length=255)
+     * @var TestEntity
+     * @ORM\ManyToOne(targetEntity="Orbitale\Component\EntityMerger\Tests\Fixtures\Entity\TestEntity")
      */
-    protected $string;
+    protected $manyToOne;
 
     /**
      * @return mixed
@@ -41,7 +42,7 @@ class TestEntity
     /**
      * @param mixed $id
      *
-     * @return TestEntity
+     * @return TestEntityWithAssociation
      */
     public function setId($id)
     {
@@ -51,21 +52,21 @@ class TestEntity
     }
 
     /**
-     * @return mixed
+     * @return TestEntity
      */
-    public function getString()
+    public function getManyToOne()
     {
-        return $this->string;
+        return $this->manyToOne;
     }
 
     /**
-     * @param mixed $string
+     * @param TestEntity $manyToOne
      *
-     * @return TestEntity
+     * @return TestEntityWithAssociation
      */
-    public function setString($string)
+    public function setManyToOne($manyToOne)
     {
-        $this->string = $string;
+        $this->manyToOne = $manyToOne;
 
         return $this;
     }
