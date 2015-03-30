@@ -18,6 +18,9 @@ use JMS\Serializer\SerializerInterface as JMSSerializerInterface;
 class EntityMerger
 {
 
+    const ASSOCIATIONS_MERGE = 1;
+    const ASSOCIATIONS_FIND = 2;
+
     /**
      * @var ObjectManager
      */
@@ -28,7 +31,12 @@ class EntityMerger
      */
     protected $serializer;
 
-    public function __construct(ObjectManager $om = null, $serializer = null)
+    /**
+     * @var integer
+     */
+    protected $associationStrategy;
+
+    public function __construct(ObjectManager $om = null, $serializer = null, $associationStrategy = null)
     {
         $this->om = $om;
 
@@ -36,6 +44,25 @@ class EntityMerger
             throw new \InvalidArgumentException('Serializer must be an instance of SerializerInterface, either Symfony native or JMS one.');
         }
         $this->serializer = $serializer;
+        $this->associationStrategy = $associationStrategy ?: (self::ASSOCIATIONS_MERGE | self::ASSOCIATIONS_FIND);
+    }
+
+    /**
+     * @param integer $strategy
+     * @return $this
+     */
+    public function setAssociationStrategy($strategy)
+    {
+        $this->associationStrategy = (int) $strategy;
+        return $this;
+    }
+
+    /**
+     * @return integer
+     */
+    public function getAssociationStrategy()
+    {
+        return $this->associationStrategy;
     }
 
     /**
@@ -139,33 +166,45 @@ class EntityMerger
                 $reflectionProperty->setAccessible(true);
 
                 $pivotValue = isset($value[$mapping['pivot']]) ? $value[$mapping['pivot']] : null;
-                if (null === $pivotValue) {
-                    // If no pivot value is specified, we'll get automatically the Entity's Primary Key
-                    /** @var ClassMetadataInfo $relationMetadatas */
-                    $relationMetadatas = $this->om->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
-                    $pivotValue = $relationMetadatas->getSingleIdentifierFieldName();
+
+                if ($pivotValue && ($this->associationStrategy & self::ASSOCIATIONS_FIND)) {
+
+                    if (null === $pivotValue) {
+                        // If no pivot value is specified, we'll get automatically the Entity's Primary Key
+                        /** @var ClassMetadataInfo $relationMetadatas */
+                        $relationMetadatas = $this->om->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
+                        $pivotValue = $relationMetadatas->getSingleIdentifierFieldName();
+                    }
+
+                    if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
+                        // Single valued : ManyToOne or OneToOne
+                        if ($value) {
+                            $newRelationObject = $this->om->getRepository($relationClass)->findOneBy(array($pivotValue => $value[$pivotValue]));
+                        } else {
+                            $newRelationObject = null;
+                        }
+                        $reflectionProperty->setValue($object, $newRelationObject);
+                    } elseif ($metadatas->isCollectionValuedAssociation($mapping['objectField'])) {
+                        // Collection : OneToMany or ManyToMany
+                        if ($value) {
+                            if (!is_array($value)) {
+                                $value = array($value);
+                            }
+                            $newCollection = $this->om->getRepository($relationClass)->findBy(array($pivotValue => $value));
+                        } else {
+                            $newCollection = array();
+                        }
+                        $reflectionProperty->setValue($object, $newCollection);
+                    }
+
                 }
 
-                if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
-                    // Single valued : ManyToOne or OneToOne
-                    if ($value) {
-                        $newRelationObject = $this->om->getRepository($relationClass)->findOneBy(array($pivotValue => $value[$pivotValue]));
-                    } else {
-                        $newRelationObject = null;
+                if ($value && ($this->associationStrategy & self::ASSOCIATIONS_MERGE)) {
+                    if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
+                        $reflectionProperty->setValue($object, $this->merge($reflectionProperty->getValue($object) ?: new $relationClass, $value));
                     }
-                    $reflectionProperty->setValue($object, $newRelationObject);
-                } elseif ($metadatas->isCollectionValuedAssociation($mapping['objectField'])) {
-                    // Collection : OneToMany or ManyToMany
-                    if ($value) {
-                        if (!is_array($value)) {
-                            $value = array($value);
-                        }
-                        $newCollection = $this->om->getRepository($relationClass)->findBy(array($pivotValue => $value));
-                    } else {
-                        $newCollection = array();
-                    }
-                    $reflectionProperty->setValue($object, $newCollection);
                 }
+
             }
         } else {
             throw new \InvalidArgumentException(sprintf(
@@ -174,4 +213,5 @@ class EntityMerger
             ));
         }
     }
+
 }

@@ -16,6 +16,10 @@ if (!file_exists($file)) {
 }
 $autoload = require_once $file;
 
+if (!is_dir(__DIR__.'/../build')) {
+    mkdir(__DIR__.'/../build', 0777, true);
+}
+
 AnnotationRegistry::registerLoader(function($class) use ($autoload) {
     $autoload->loadClass($class);
     return class_exists($class, false);
