@@ -18,7 +18,19 @@ use JMS\Serializer\SerializerInterface as JMSSerializerInterface;
 class EntityMerger
 {
 
+    /**
+     * When merging objects, the merger will use the same "merge" for the associated fields,
+     * doing every merge recursively for each object involved.
+     * Be careful: if the merged object also have associations, it can be risky.
+     * Be sure to have the whole object mapped recursively.
+     */
     const ASSOCIATIONS_MERGE = 1;
+
+    /**
+     * For associations, the merger will search for an entity in the Database, depending on the mapping.
+     * It will search for the primary key identifier, and make a basic $repo->find($id),
+     * only if the specified identifier is mapped in the "dataObject"
+     */
     const ASSOCIATIONS_FIND = 2;
 
     /**
@@ -109,7 +121,7 @@ class EntityMerger
                     // Although $params should be either "1", "true" or an array, even empty
                     $params = array();
                 }
-                if (isset($dataObject[$field])) {
+                if (array_key_exists($field, $dataObject)) {
                     $this->mergeField($field, $object, $dataObject[$field], $params);
                 } else {
                     throw new \InvalidArgumentException(sprintf(
@@ -167,15 +179,15 @@ class EntityMerger
 
                 $pivotValue = isset($value[$mapping['pivot']]) ? $value[$mapping['pivot']] : null;
 
+                if (null === $pivotValue) {
+                    // If no pivot value is specified, we'll get automatically the Entity's Primary Key
+                    /** @var ClassMetadataInfo $relationMetadatas */
+                    $relationMetadatas = $this->om->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
+                    $pivotValue = $relationMetadatas->getSingleIdentifierFieldName();
+                }
+
                 if ($pivotValue && ($this->associationStrategy & self::ASSOCIATIONS_FIND)) {
-
-                    if (null === $pivotValue) {
-                        // If no pivot value is specified, we'll get automatically the Entity's Primary Key
-                        /** @var ClassMetadataInfo $relationMetadatas */
-                        $relationMetadatas = $this->om->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
-                        $pivotValue = $relationMetadatas->getSingleIdentifierFieldName();
-                    }
-
+                    // "find" strategy.
                     if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
                         // Single valued : ManyToOne or OneToOne
                         if ($value) {
@@ -196,15 +208,14 @@ class EntityMerger
                         }
                         $reflectionProperty->setValue($object, $newCollection);
                     }
-
                 }
 
                 if ($value && ($this->associationStrategy & self::ASSOCIATIONS_MERGE)) {
+                    // "merge" strategy
                     if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
                         $reflectionProperty->setValue($object, $this->merge($reflectionProperty->getValue($object) ?: new $relationClass, $value));
                     }
                 }
-
             }
         } else {
             throw new \InvalidArgumentException(sprintf(
