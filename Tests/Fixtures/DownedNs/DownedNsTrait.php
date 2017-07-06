@@ -10,5 +10,6 @@
 
 namespace Orbitale\Component\EntityMerger\Tests\Fixtures\DownedNs;
 
-trait DownedNsTrait {
+trait DownedNsTrait
+{
 }

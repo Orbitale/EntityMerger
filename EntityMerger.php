@@ -17,7 +17,6 @@ use JMS\Serializer\SerializerInterface as JMSSerializerInterface;
 
 class EntityMerger
 {
-
     /**
      * When merging objects, the merger will use the same "merge" for the associated fields,
      * doing every merge recursively for each object involved.
@@ -29,7 +28,7 @@ class EntityMerger
     /**
      * For associations, the merger will search for an entity in the Database, depending on the mapping.
      * It will search for the primary key identifier, and make a basic $repo->find($id),
-     * only if the specified identifier is mapped in the "dataObject"
+     * only if the specified identifier is mapped in the "dataObject".
      */
     const ASSOCIATIONS_FIND = 2;
 
@@ -44,7 +43,7 @@ class EntityMerger
     protected $serializer;
 
     /**
-     * @var integer
+     * @var int
      */
     protected $associationStrategy;
 
@@ -53,24 +52,28 @@ class EntityMerger
         $this->om = $om;
 
         if ($serializer && !($serializer instanceof SerializerInterface || $serializer instanceof JMSSerializerInterface)) {
-            throw new \InvalidArgumentException('Serializer must be an instance of SerializerInterface, either Symfony native or JMS one.');
+            throw new \InvalidArgumentException(
+                'Serializer must be an instance of SerializerInterface, either Symfony native or JMS one.'
+            );
         }
-        $this->serializer = $serializer;
+        $this->serializer          = $serializer;
         $this->associationStrategy = $associationStrategy ?: (self::ASSOCIATIONS_MERGE | self::ASSOCIATIONS_FIND);
     }
 
     /**
-     * @param integer $strategy
+     * @param int $strategy
+     *
      * @return $this
      */
     public function setAssociationStrategy($strategy)
     {
         $this->associationStrategy = (int) $strategy;
+
         return $this;
     }
 
     /**
-     * @return integer
+     * @return int
      */
     public function getAssociationStrategy()
     {
@@ -78,14 +81,15 @@ class EntityMerger
     }
 
     /**
-     * Tries to merge array $dataObject into $object
+     * Tries to merge array $dataObject into $object.
      *
      * @param object       $object
      * @param array|object $dataObject
      * @param array        $mapping
+     *
      * @return object
      */
-    public function merge($object, $dataObject, $mapping = array())
+    public function merge($object, $dataObject, array $mapping = [])
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException('You must specify an object in order to merge the array in it.');
@@ -98,16 +102,18 @@ class EntityMerger
         if (!count($dataObject)) {
             throw new \InvalidArgumentException('If you want to merge an array into an entity, you must populate this array.');
         }
+
         return $this->doMerge($object, $dataObject, $mapping);
     }
 
     /**
-     * @param $object
+     * @param       $object
      * @param array $dataObject
      * @param array $mapping
+     *
      * @return mixed
      */
-    protected function doMerge($object, array $dataObject, $mapping = array())
+    protected function doMerge($object, array $dataObject, array $mapping = [])
     {
         if (count($mapping)) {
             foreach ($mapping as $field => $params) {
@@ -119,41 +125,47 @@ class EntityMerger
                     // Allows anything to be transformed into an array
                     // If we used json_decode, "null" will be returned and then it'll become an empty array
                     // Although $params should be either "1", "true" or an array, even empty
-                    $params = array();
+                    $params = [];
                 }
                 if (array_key_exists($field, $dataObject)) {
                     $this->mergeField($field, $object, $dataObject[$field], $params);
                 } else {
-                    throw new \InvalidArgumentException(sprintf(
-                        'If you want to specify "%s" as an mergeable field, then you must have to set it in your data object.',
-                        $field
-                    ));
+                    throw new \InvalidArgumentException(
+                        sprintf(
+                            'If you want to specify "%s" as an mergeable field, then you must have to set it in your data object.',
+                            $field
+                        )
+                    );
                 }
             }
         } else {
             foreach ($dataObject as $field => $value) {
-                $this->mergeField($field, $object, $value, array());
+                $this->mergeField($field, $object, $value);
             }
         }
+
         return $object;
     }
 
     /**
      * Will try to merge a field by automatically searching in its doctrine mapping datas.
      *
-     * @param string $field The field to merge
-     * @param object $object The entity you want to "hydrate"
-     * @param mixed $value The datas you want to merge in the object field
-     * @param array $userMapping An array containing mapping informations provided by the user. Mostly used for relationships
+     * @param string $field       The field to merge
+     * @param object $object      The entity you want to "hydrate"
+     * @param mixed  $value       The datas you want to merge in the object field
+     * @param array  $userMapping An array containing mapping informations provided by the user. Mostly used for relationships
      */
-    protected function mergeField($field, $object, $value, array $userMapping = array())
+    protected function mergeField($field, $object, $value, array $userMapping = [])
     {
         $currentlyAnalyzedClass = get_class($object);
 
-        $mapping = array_merge(array(
-            'pivot' => null,
-            'objectField' => $field,
-        ), $userMapping);
+        $mapping = array_merge(
+            [
+                'pivot'       => null,
+                'objectField' => $field,
+            ],
+            $userMapping
+        );
 
         if ($this->om) {
             $metadatas = $this->om->getClassMetadata($currentlyAnalyzedClass);
@@ -161,9 +173,9 @@ class EntityMerger
             $metadatas = new EmptyClassMetadata($currentlyAnalyzedClass);
         }
 
-        $hasMapping = $metadatas->hasField($mapping['objectField']) ?: $metadatas->hasAssociation($mapping['objectField']);
-
-        $reflectionProperty = null;
+        $hasMapping = $metadatas->hasField($mapping['objectField']) ?: $metadatas->hasAssociation(
+            $mapping['objectField']
+        );
 
         if ($hasMapping) {
             if ($metadatas->hasField($mapping['objectField'])) {
@@ -173,7 +185,7 @@ class EntityMerger
                 $reflectionProperty->setValue($object, $value);
             } elseif ($metadatas->hasAssociation($mapping['objectField'])) {
                 // Handles a relation
-                $relationClass = $metadatas->getAssociationTargetClass($mapping['objectField']);
+                $relationClass      = $metadatas->getAssociationTargetClass($mapping['objectField']);
                 $reflectionProperty = $metadatas->getReflectionClass()->getProperty($mapping['objectField']);
                 $reflectionProperty->setAccessible(true);
 
@@ -182,47 +194,51 @@ class EntityMerger
                 if (null === $pivotValue) {
                     // If no pivot value is specified, we'll get automatically the Entity's Primary Key
                     /** @var ClassMetadataInfo $relationMetadatas */
-                    $relationMetadatas = $this->om->getMetadataFactory($relationClass)->getMetadataFor($relationClass);
-                    $pivotValue = $relationMetadatas->getSingleIdentifierFieldName();
+                    $relationMetadatas = $this->om->getMetadataFactory()->getMetadataFor($relationClass);
+                    $pivotValue        = $relationMetadatas->getSingleIdentifierFieldName();
                 }
 
                 if ($pivotValue && ($this->associationStrategy & self::ASSOCIATIONS_FIND)) {
                     // "find" strategy.
                     if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
                         // Single valued : ManyToOne or OneToOne
+                        $newRelationObject = null;
                         if ($value) {
-                            $newRelationObject = $this->om->getRepository($relationClass)->findOneBy(array($pivotValue => $value[$pivotValue]));
-                        } else {
-                            $newRelationObject = null;
+                            $newRelationObject = $this->om->getRepository($relationClass)->findOneBy(
+                                [$pivotValue => $value[$pivotValue]]
+                            );
                         }
                         $reflectionProperty->setValue($object, $newRelationObject);
                     } elseif ($metadatas->isCollectionValuedAssociation($mapping['objectField'])) {
                         // Collection : OneToMany or ManyToMany
                         if ($value) {
                             if (!is_array($value)) {
-                                $value = array($value);
+                                $value = [$value];
                             }
-                            $newCollection = $this->om->getRepository($relationClass)->findBy(array($pivotValue => $value));
+                            $newCollection = $this->om->getRepository($relationClass)->findBy([$pivotValue => $value]);
                         } else {
-                            $newCollection = array();
+                            $newCollection = [];
                         }
                         $reflectionProperty->setValue($object, $newCollection);
                     }
                 }
 
-                if ($value && ($this->associationStrategy & self::ASSOCIATIONS_MERGE)) {
-                    // "merge" strategy
-                    if ($metadatas->isSingleValuedAssociation($mapping['objectField'])) {
-                        $reflectionProperty->setValue($object, $this->merge($reflectionProperty->getValue($object) ?: new $relationClass, $value));
-                    }
+                // "merge" strategy
+                if ($value && ($this->associationStrategy & self::ASSOCIATIONS_MERGE) && $metadatas->isSingleValuedAssociation($mapping['objectField'])) {
+                    $reflectionProperty->setValue(
+                        $object,
+                        $this->merge($reflectionProperty->getValue($object) ?: new $relationClass(), $value)
+                    );
                 }
             }
         } else {
-            throw new \InvalidArgumentException(sprintf(
-                'Could not find field "%s" in class "%s"',
-                $mapping['objectField'], $currentlyAnalyzedClass
-            ));
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Could not find field "%s" in class "%s"',
+                    $mapping['objectField'],
+                    $currentlyAnalyzedClass
+                )
+            );
         }
     }
-
 }

@@ -15,19 +15,19 @@ use Symfony\Component\Validator\Constraints\DateTime;
 
 class TestClassicObject
 {
-
     public $id;
 
     /**
      * @author Piers
+     *
      * @var string
      */
     public $commentedField;
 
-    public $defaultedField = array();
+    public $defaultedField = [];
 
     /**
-     * @var integer
+     * @var int
      */
     public $bothCommentedAndDefaulted = 0;
 
@@ -53,6 +53,7 @@ class TestClassicObject
 
     /**
      * @DateTime() annotation just to say
+     *
      * @var \DateTime
      */
     public $date;
@@ -62,5 +63,4 @@ class TestClassicObject
     protected $protectedField;
 
     private $privateField;
-
 }

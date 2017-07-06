@@ -16,10 +16,10 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity()
  * @ORM\Table(name="test_entity_asso")
  */
-class TestEntityWithAssociation {
-
+class TestEntityWithAssociation
+{
     /**
-     * @ORM\Id
+     * @ORM\Id()
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
@@ -70,5 +70,4 @@ class TestEntityWithAssociation {
 
         return $this;
     }
-
 }

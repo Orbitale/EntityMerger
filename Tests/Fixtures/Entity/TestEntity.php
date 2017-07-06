@@ -18,9 +18,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class TestEntity
 {
-
     /**
-     * @ORM\Id
+     * @ORM\Id()
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
@@ -70,5 +69,4 @@ class TestEntity
 
         return $this;
     }
-
 }

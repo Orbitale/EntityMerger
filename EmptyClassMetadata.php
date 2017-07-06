@@ -12,12 +12,10 @@ namespace Orbitale\Component\EntityMerger;
 
 use Doctrine\Common\Annotations\SimpleAnnotationReader;
 use ReflectionClass;
-
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 
-class EmptyClassMetadata  implements ClassMetadata
+class EmptyClassMetadata implements ClassMetadata
 {
-
     protected $className;
 
     /**
@@ -43,6 +41,7 @@ class EmptyClassMetadata  implements ClassMetadata
         if (!$this->reflClass) {
             $this->reflClass = new ReflectionClass($this->getName());
         }
+
         return $this->reflClass;
     }
 
@@ -53,13 +52,14 @@ class EmptyClassMetadata  implements ClassMetadata
 
     public function getFieldNames()
     {
-        $props = array();
+        $props     = [];
         $reflProps = $this->getReflectionClass()->getProperties();
         foreach ($reflProps as $prop) {
             if ($this->hasField($prop->getName())) {
                 $props[] = $prop->getName();
             }
         }
+
         return $props;
     }
 
@@ -67,7 +67,7 @@ class EmptyClassMetadata  implements ClassMetadata
     {
         if ($this->getReflectionClass()->hasProperty($fieldName)) {
             $reflProp = $this->getReflectionClass()->getProperty($fieldName);
-            $doc = (string) $reflProp->getDocComment();
+            $doc      = (string) $reflProp->getDocComment();
             if (strpos($doc, '@var') === false) {
                 // First, if we don't have any "@var" annotation,
                 // we try to check if the property has a default value
@@ -79,46 +79,51 @@ class EmptyClassMetadata  implements ClassMetadata
                 return $this->getTypeByAnnotation($reflProp);
             }
         }
+
         return null;
     }
 
     protected function getTypeByAnnotation(\ReflectionProperty $reflProp)
     {
-            preg_match('~@var +([^\s]+)(?:\[\])?(?:.+)?\n~is', $reflProp->getDocComment(), $annotations);
-            $annotations = array_map('trim', $annotations);
-            if (isset($annotations[1])) {
-                $annotation = str_replace('[]', '', $annotations[1]); // Trim from the potential array notation "type[]"
-                if ($this->getValidType($annotation)) {
-                    return $this->getValidType($annotation);
-                } elseif (class_exists($annotation)) {
-                    return $annotation;
-                } elseif (class_exists($this->getReflectionClass()->getNamespaceName().'\\'.$annotation)) {
-                    return $this->getReflectionClass()->getNamespaceName().'\\'.$annotation;
-                }
-                $reader = new SimpleAnnotationReader();
-                $reader->addNamespace($this->getReflectionClass()->getNamespaceName());
+        preg_match('~@var +(\S+)(?:\[\])?(?:.+)?\n~is', $reflProp->getDocComment(), $annotations);
+        $annotations = array_map('trim', $annotations);
+        if (isset($annotations[1])) {
+            $annotation = str_replace('[]', '', $annotations[1]); // Trim from the potential array notation "type[]"
+            if ($validType = $this->getValidType($annotation)) {
+                return $validType;
+            }
+            if (class_exists($annotation)) {
+                return trim($annotation, '\\');
+            }
+            if (class_exists($this->getReflectionClass()->getNamespaceName().'\\'.$annotation)) {
+                return trim($this->getReflectionClass()->getNamespaceName().'\\'.$annotation, '\\');
+            }
+            $reader = new SimpleAnnotationReader();
+            $reader->addNamespace($this->getReflectionClass()->getNamespaceName());
 
-                $readAnnotations = $reader->getPropertyAnnotations($reflProp);
-                foreach ($readAnnotations as $readAnnotation) {
-                    if (strpos($readAnnotation, $annotation) === strlen($readAnnotation) - strlen($annotation)) {
-                        return $readAnnotation;
-                    }
-                }
-
-                $file = $this->getReflectionClass()->getFileName();
-                $content = file_get_contents($file);
-
-                // In case PHP5.5+ and traits
-                $content = preg_replace('~(class [^{]+\{)(?:\s*use [^;]+;)*~isu', '$1', $content);
-
-                preg_match_all('~^\s*use ([^;]+);~m', $content, $matches);
-                $matches = isset($matches[1]) ? $matches[1] : array();
-                foreach ($matches as $fqcn) {
-                    if (strpos($fqcn, $annotation) === strlen($fqcn) - strlen($annotation)) {
-                        return $fqcn;
-                    }
+            $readAnnotations = $reader->getPropertyAnnotations($reflProp);
+            foreach ($readAnnotations as $readAnnotation) {
+                if (strpos($readAnnotation, $annotation) === strlen($readAnnotation) - strlen($annotation)) {
+                    return $readAnnotation;
                 }
             }
+
+            $file    = $this->getReflectionClass()->getFileName();
+            $content = file_get_contents($file);
+
+            // In case PHP5.5+ and traits
+            $content = preg_replace('~(class [^{]+{)(?:\s*use [^;]+;)*~iu', '$1', $content);
+
+            preg_match_all('~^\s*use ([^;]+);~m', $content, $matches);
+            $matches = isset($matches[1]) ? $matches[1] : [];
+            foreach ($matches as $fqcn) {
+                if (strpos($fqcn, $annotation) === strlen($fqcn) - strlen($annotation)) {
+                    return $fqcn;
+                }
+            }
+        }
+
+        return null;
     }
 
     public function isIdentifier($fieldName)
@@ -178,7 +183,7 @@ class EmptyClassMetadata  implements ClassMetadata
 
     private function getValidType($type = null)
     {
-        $types = array(
+        $types = [
             'integer'  => 'integer',
             'number'   => 'integer',
             'int'      => 'integer',
@@ -193,11 +198,12 @@ class EmptyClassMetadata  implements ClassMetadata
             'object'   => 'object',
             'null'     => 'null',
             'callable' => 'callable',
-        );
+        ];
 
         if (isset($types[$type])) {
             return $types[$type];
         }
+
         return null;
     }
 }

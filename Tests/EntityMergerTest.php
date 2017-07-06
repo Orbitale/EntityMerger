@@ -14,7 +14,6 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\SchemaTool;
 use stdClass;
-use Doctrine\ORM\Tools\SchemaValidator;
 use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMException;
@@ -33,6 +32,10 @@ use Symfony\Component\Serializer\Serializer;
 
 class EntityMergerTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @var EntityManager
+     */
+    public static $em;
 
     /**
      * @expectedException \InvalidArgumentException
@@ -40,7 +43,7 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstructException()
     {
-        new EntityMerger(null, (object) array());
+        new EntityMerger(null, (object) []);
     }
 
     /**
@@ -50,7 +53,7 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
     public function testMergeInvalidException()
     {
         $merger = new EntityMerger();
-        $merger->merge(1, array());
+        $merger->merge(1, []);
     }
 
     /**
@@ -60,7 +63,7 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
     public function testMergeNoDataObject()
     {
         $merger = new EntityMerger();
-        $merger->merge((object) array(), array());
+        $merger->merge((object) [], []);
     }
 
     public function testMergeEntity()
@@ -70,13 +73,13 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
         $merger = new EntityMerger($em);
 
         /** @var TestEntity $entity */
-        $entity = new TestEntity;
+        $entity = new TestEntity();
 
         $entity->setId(1)->setString('Name');
         $this->assertEquals(1, $entity->getId());
 
         /** @var TestEntity $merged */
-        $mergedEntity = $merger->merge($entity, array('id' => 10));
+        $mergedEntity = $merger->merge($entity, ['id' => 10]);
 
         $this->assertEquals(10, $mergedEntity->getId());
     }
@@ -85,7 +88,7 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
     {
         $merger = new EntityMerger();
         /** @var TestClassicObject $object */
-        $object = $merger->merge(new TestClassicObject(), array('commentedField' => 'this is awesome !'));
+        $object = $merger->merge(new TestClassicObject(), ['commentedField' => 'this is awesome !']);
         $this->assertEquals('this is awesome !', $object->commentedField);
     }
 
@@ -95,15 +98,15 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
      */
     public function testUnmappedField()
     {
-        $object = new stdClass();
+        $object        = new stdClass();
         $object->field = null;
-        $merger = new EntityMerger();
-        $merger->merge($object, array('field' => 'value'));
+        $merger        = new EntityMerger();
+        $merger->merge($object, ['field' => 'value']);
     }
 
     public function testMergeSerializeNative()
     {
-        if (!class_exists('Symfony\Component\Serializer\Normalizer\PropertyNormalizer')) {
+        if (!class_exists(PropertyNormalizer::class)) {
             $this->markTestSkipped('Symfony 2.3 and 2.4 cannot use the serializer with the EntityMerger.');
         }
         $serializer = $this->getSerializer();
@@ -136,10 +139,10 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 
     public function testMergeWithMapping()
     {
-        $object = new TestClassicObject();
+        $object                 = new TestClassicObject();
         $object->commentedField = 'Should never be analyzed.';
-        $data = array('commentedField' => 'This field should be specified.');
-        $mapping = array('commentedField' => true,);
+        $data                   = ['commentedField' => 'This field should be specified.'];
+        $mapping                = ['commentedField' => true];
 
         $merger = new EntityMerger();
 
@@ -150,10 +153,10 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 
     public function testMergeWithMappingJson()
     {
-        $object = new TestClassicObject();
+        $object                 = new TestClassicObject();
         $object->commentedField = 'Should never be analyzed.';
-        $data = array('commented_field' => 'This field should be specified.');
-        $mapping = array('commented_field' => json_encode(array('objectField' => 'commentedField')));
+        $data                   = ['commented_field' => 'This field should be specified.'];
+        $mapping                = ['commented_field' => json_encode(['objectField' => 'commentedField'])];
 
         $merger = new EntityMerger();
 
@@ -164,10 +167,10 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 
     public function testMergeWithMappingObjectField()
     {
-        $object = new TestClassicObject();
+        $object                 = new TestClassicObject();
         $object->commentedField = 'Should never be analyzed.';
-        $data = array('commented_field' => 'This field should be specified.');
-        $mapping = array('commented_field' => array('objectField' => 'commentedField'));
+        $data                   = ['commented_field' => 'This field should be specified.'];
+        $mapping                = ['commented_field' => ['objectField' => 'commentedField']];
 
         $merger = new EntityMerger();
 
@@ -182,10 +185,10 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
      */
     public function testMergeWithMappingInvalid()
     {
-        $object = new TestClassicObject();
+        $object                 = new TestClassicObject();
         $object->commentedField = 'Should never be analyzed.';
-        $data = array('commentedField' => 'This field should be specified.');
-        $mapping = array('commentedField' => true, 'inexistant_field' => true);
+        $data                   = ['commentedField' => 'This field should be specified.'];
+        $mapping                = ['commentedField' => true, 'inexistant_field' => true];
 
         $merger = new EntityMerger();
 
@@ -205,8 +208,8 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 
         $merger = new EntityMerger($em);
 
-        $data = array('manyToOne' => array('id' => 1, 'string' => 'New string.'));
-        $mapping = array('manyToOne' => true);
+        $data    = ['manyToOne' => ['id' => 1, 'string' => 'New string.']];
+        $mapping = ['manyToOne' => true];
 
         $merger->merge($object, $data, $mapping);
 
@@ -216,21 +219,29 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @return EntityManager
+     *
      * @throws ORMException
      */
     protected function getEntityManager()
     {
-        $config = Setup::createAnnotationMetadataConfiguration(array(__DIR__."/Fixtures/Entity"), true);
-        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader(), array(__DIR__."/Fixtures/Entity")));
-
-        if (file_exists(__DIR__.'/../build/test.db')) {
-            unlink(__DIR__.'/../build/test.db');
+        if (static::$em) {
+            static::$em->getConnection()->close();
         }
 
-        $em = EntityManager::create(array('path' => __DIR__.'/../build/test.db', 'driver' => 'pdo_sqlite'), $config);
+        $rootDir = dirname(__DIR__);
+        if (file_exists($rootDir.'/build/test.db')) {
+            unlink($rootDir.'/build/test.db');
+        }
+
+        $config = Setup::createAnnotationMetadataConfiguration([__DIR__.'/Fixtures/Entity'], true);
+        $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader(), [__DIR__.'/Fixtures/Entity']));
+
+        $em = EntityManager::create(['path' => __DIR__.'/../build/test.db', 'driver' => 'pdo_sqlite'], $config);
 
         $tool = new SchemaTool($em);
         $tool->createSchema($em->getMetadataFactory()->getAllMetadata());
+
+        static::$em = $em;
 
         return $em;
     }
@@ -240,11 +251,12 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
      */
     protected function getSerializer()
     {
-        $normalizers = array(new GetSetMethodNormalizer(), new CustomNormalizer());
-        if (class_exists('Symfony\Component\Serializer\Normalizer\PropertyNormalizer')) {
+        $normalizers = [new GetSetMethodNormalizer(), new CustomNormalizer()];
+        if (class_exists(PropertyNormalizer::class)) {
             $normalizers[] = new PropertyNormalizer();
         }
-        $encoders = array(new JsonEncoder());
+        $encoders = [new JsonEncoder()];
+
         return new Serializer($normalizers, $encoders);
     }
 
@@ -255,6 +267,7 @@ class EntityMergerTest extends \PHPUnit_Framework_TestCase
     {
         $builder = SerializerBuilder::create();
         $builder->setPropertyNamingStrategy(new IdenticalPropertyNamingStrategy());
+
         return $builder->build();
     }
 }

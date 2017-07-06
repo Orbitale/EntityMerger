@@ -10,19 +10,20 @@
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
 
-$file = __DIR__ . '/../vendor/autoload.php';
+$file = __DIR__.'/../vendor/autoload.php';
 if (!file_exists($file)) {
     throw new RuntimeException('Install dependencies to run test suite.');
 }
-$autoload = require_once $file;
+$autoload = require $file;
 
 if (!is_dir(__DIR__.'/../build')) {
     mkdir(__DIR__.'/../build', 0777, true);
 }
 
-AnnotationRegistry::registerLoader(function($class) use ($autoload) {
+AnnotationRegistry::registerLoader(function ($class) use ($autoload) {
     $autoload->loadClass($class);
+
     return class_exists($class, false);
 });
 
-spl_autoload_register(array($autoload, 'loadClass'));
+spl_autoload_register([$autoload, 'loadClass']);
