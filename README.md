@@ -1,6 +1,4 @@
-[![SensioLabsInsight](https://insight.sensiolabs.com/projects/fb6bd829-fda7-4b4e-b759-6cab39c5614a/mini.png)](https://insight.sensiolabs.com/projects/fb6bd829-fda7-4b4e-b759-6cab39c5614a)
-[![Build Status](https://travis-ci.org/Orbitale/EntityMerger.svg)](https://travis-ci.org/Orbitale/EntityMerger)
-[![Coverage Status](https://coveralls.io/repos/Orbitale/EntityMerger/badge.svg)](https://coveralls.io/r/Orbitale/EntityMerger)
+:warning: This package is unmaintained. Please look at better solutions, like serializers.
 
 Entity Merger
 ===============
